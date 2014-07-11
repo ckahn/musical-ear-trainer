@@ -21,15 +21,18 @@ public class SoundGenerator {
 			
 			// Get array of channels
 			MidiChannel channels[] = synth.getChannels();
-			
+			System.out.println("Got channels.");
 			// Use first available channel
 			for (MidiChannel c : channels) {
+				System.out.print("c = " + c + " ");
 				if (c != null) {	
 					channel = c;
+					System.out.println("Channel assigned!"); // TEST
 					break;
 				}
 			}
 		} catch (Exception e) {
+			System.err.println("Error: " + e.getMessage());
 			e.getStackTrace();
 			return;
 		}

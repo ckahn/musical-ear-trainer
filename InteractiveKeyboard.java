@@ -156,6 +156,28 @@ class Keyboard extends JPanel implements MouseListener {
 		whiteKeyIsPressed = false;
 		repaint();
 	}
+	
+	// TODO - Play a melody for the user to repeat
+	public void compTurn(int key, int note) {
+		int delay = 1000; //milliseconds
+		
+		whiteKeyIsPressed = true;
+		pressedWhiteKey = key;
+		repaint();
+		synth.playNote(note);
+		
+		ActionListener taskPerformer = new ActionListener() {
+			public void actionPerformed(ActionEvent evt) {
+				synth.stopNote();
+				blackKeyIsPressed = false;
+				whiteKeyIsPressed = false;
+				repaint();
+			}
+		};
+		Timer timer = new Timer(delay, taskPerformer);
+		timer.setRepeats(false);
+		timer.start();
+	}
 
 	// All MouseListener implementations need these
 	public void mouseClicked(MouseEvent e) { }
@@ -178,15 +200,13 @@ class Keyboard extends JPanel implements MouseListener {
  *
  */
 public class InteractiveKeyboard extends JFrame {
-
+	
 	// Initialize window and add keyboard
 	private InteractiveKeyboard() {
 		setTitle("Interactive Keyboard");
 		setSize(775, 300);
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		add(new Keyboard(50, 50));
 	}
 
 	// Create and show application window
@@ -197,8 +217,12 @@ public class InteractiveKeyboard extends JFrame {
 
 			@Override
 			public void run() {
+				Keyboard kb = new Keyboard(50, 50);
 				InteractiveKeyboard window = new InteractiveKeyboard();
+				window.add(kb);
 				window.setVisible(true);
+				
+				kb.compTurn(0, 48);
 			}
 		});   
 	}
