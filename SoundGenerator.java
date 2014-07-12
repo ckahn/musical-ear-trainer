@@ -14,14 +14,11 @@ public class SoundGenerator {
 		try {
 			// Get synthesizer and open it
 			synth = MidiSystem.getSynthesizer();
-			if (synth == null) {
-				System.out.println("No synth!");
-			}
 			synth.open();
 			
 			// Get array of channels
 			MidiChannel channels[] = synth.getChannels();
-			System.out.println("Got channels.");
+
 			// Use first available channel
 			for (MidiChannel c : channels) {
 				System.out.print("c = " + c + " ");
@@ -33,7 +30,7 @@ public class SoundGenerator {
 			}
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
-			e.getStackTrace();
+			System.err.println(e.getStackTrace());
 			return;
 		}
 	}
