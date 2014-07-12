@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
+import java.util.concurrent.CountDownLatch;
+
 import javax.swing.*;
 
 /**
@@ -22,12 +24,20 @@ class Keyboard extends JPanel implements MouseListener {
 	private boolean blackKeyIsPressed = false;
 	private int pressedWhiteKey = 0;
 	private int pressedBlackKey = 0;
+	
+	// Map items from key arrays to notes (First key = 0)
+	private int[] bKeyTrans = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
+	int[] wKeyTrans = {0, 2, 4, 5, 7, 9, 11, 12, 14, 
+			16, 17, 19, 21, 23, 24};
 
 	// Color of pressed key
 	private Color pressedKeyColor = Color.LIGHT_GRAY;
 
 	// Sound source
 	private final SoundGenerator synth = new SoundGenerator();
+	
+	// Timer for auto-playing melody
+	Timer timer = new Timer(1000, new AutoPlay());
 
 	// Constructors
 	public Keyboard() {
@@ -124,26 +134,16 @@ class Keyboard extends JPanel implements MouseListener {
 		// Get point location
 		Point p = new Point(e.getX(), e.getY());
 
-		// Check black keys first since they overlap white keys
-		int lowestC = 48;
+		// Check black keys first since they are on top of the white keys
 		for (int i = 0; i < blackKeys.length; i++) {
 			if (blackKeys[i].contains(p)) {
-				blackKeyIsPressed = true;
-				pressedBlackKey = i;
-				repaint();
-				int[] notes = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
-				synth.playNote(lowestC + notes[i]);
+				startNote(false, i);
 				return;
 			}
 		}
 		for (int i = 0; i < whiteKeys.length; i++) {
 			if (whiteKeys[i].contains(p)) {
-				whiteKeyIsPressed = true;
-				pressedWhiteKey = i;
-				repaint();
-				int[] notes = {0, 2, 4, 5, 7, 9, 11, 12, 14, 
-						16, 17, 19, 21, 23, 24};
-				synth.playNote(lowestC + notes[i]);
+				startNote(true, i);
 				return;
 			}
 		}
@@ -151,31 +151,47 @@ class Keyboard extends JPanel implements MouseListener {
 
 	// Clear information about which key is pressed and reset keyboard
 	public void mouseReleased(MouseEvent e) {
+		endNote();
+	}
+	
+	private void startNote(boolean keyIsWhite, int pressedKey) {
+		if (keyIsWhite) {
+			whiteKeyIsPressed = true;
+			pressedWhiteKey = pressedKey;
+			synth.playNote(LOW_C + wKeyTrans[pressedKey]);
+		} else {
+			blackKeyIsPressed = true;
+			pressedBlackKey = pressedKey;
+			synth.playNote(LOW_C + bKeyTrans[pressedKey]);
+		}
+		repaint();
+	}
+	
+	private void endNote() {
 		synth.stopNote();
 		blackKeyIsPressed = false;
 		whiteKeyIsPressed = false;
 		repaint();
 	}
 	
-	// TODO - Play a melody for the user to repeat
-	public void compTurn(int key, int note) {
-		int delay = 1000; //milliseconds
+	// Listens to timer
+	class AutoPlay implements ActionListener {
 		
-		whiteKeyIsPressed = true;
-		pressedWhiteKey = key;
-		repaint();
-		synth.playNote(note);
+		private int note = 0;
 		
-		ActionListener taskPerformer = new ActionListener() {
-			public void actionPerformed(ActionEvent evt) {
-				synth.stopNote();
-				blackKeyIsPressed = false;
-				whiteKeyIsPressed = false;
-				repaint();
+		public void actionPerformed(ActionEvent e) {
+			endNote();
+			startNote(true, note);
+			if (note < 14) note++;
+			else { 
+				timer.stop();
 			}
-		};
-		Timer timer = new Timer(delay, taskPerformer);
-		timer.setRepeats(false);
+		}
+	}
+	
+	// TODO - Play a melody for the user to repeat
+	public void compTurn() {
+		timer.setInitialDelay(500);
 		timer.start();
 	}
 
@@ -191,6 +207,8 @@ class Keyboard extends JPanel implements MouseListener {
 	private final int NUM_BLACK_KEYS = 10;
 	private final double BLACK_KEY_HEIGHT = WHITE_KEY_HEIGHT * 0.67;
 	private final double BLACK_KEY_WIDTH = WHITE_KEY_WIDTH * 0.5;
+	
+	private final int LOW_C = 48;
 }
 
 // -------------------------------------------------------------- //
@@ -222,7 +240,8 @@ public class InteractiveKeyboard extends JFrame {
 				window.add(kb);
 				window.setVisible(true);
 				
-				kb.compTurn(0, 48);
+				kb.compTurn();
+				System.out.println("Too soon!");
 			}
 		});   
 	}
