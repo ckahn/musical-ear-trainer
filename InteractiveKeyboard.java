@@ -1,7 +1,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
-import java.util.concurrent.CountDownLatch;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import javax.swing.*;
 
@@ -36,9 +37,11 @@ class Keyboard extends JPanel implements MouseListener {
 	// Sound source
 	private final SoundGenerator synth = new SoundGenerator();
 	
-	// Timer for auto-playing melody
-	Timer timer = new Timer(1000, new AutoPlay());
-
+	// Data to control shifting from computer's turn to user's
+	public static final String TIMER_COMPLETE = "timer complete";
+	private static final int TIMER_DELAY = 1000;
+	private Timer timer;
+	
 	// Constructors
 	public Keyboard() {
 		position = new Point(0, 0);
@@ -53,7 +56,18 @@ class Keyboard extends JPanel implements MouseListener {
 	private void initKeyboard() {
 		setWhiteKeys();
 		setBlackKeys();
+
 		addMouseListener(this);
+		
+		addPropertyChangeListener(new PropertyChangeListener() {
+
+			@Override
+			public void propertyChange(PropertyChangeEvent pcEvt) {
+				if (MyProgram.TIMER_COMPLETE.equals(pcEvt.getPropertyName()) && pcEvt.getNewValue() == Boolean.TRUE) {
+					System.out.println("Your turn"); // Program starts analyzing what the user plays
+				}
+			}
+		});
 	}
 
 	// Add all white keys to the array
@@ -147,6 +161,9 @@ class Keyboard extends JPanel implements MouseListener {
 				return;
 			}
 		}
+		
+		// If user clicked outside keyboard, auto-play melody TODO
+		compTurn();
 	}
 
 	// Clear information about which key is pressed and reset keyboard
@@ -178,21 +195,42 @@ class Keyboard extends JPanel implements MouseListener {
 	class AutoPlay implements ActionListener {
 		
 		private int note = 0;
-		
+
+		@Override
 		public void actionPerformed(ActionEvent e) {
 			endNote();
 			startNote(true, note);
+			note++;
 			if (note < 14) note++;
 			else { 
 				timer.stop();
+				firePropertyChange(TIMER_COMPLETE, false, true);
 			}
 		}
 	}
 	
 	// TODO - Play a melody for the user to repeat
 	public void compTurn() {
-		timer.setInitialDelay(500);
+		if (timer != null && timer.isRunning()) {
+			return;
+		}
+		timer = new Timer(TIMER_DELAY, new TimerListener());
 		timer.start();
+	}
+	
+	private class TimerListener implements ActionListener {
+		private int note = 0;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			endNote();
+			startNote(true, note);
+			if (note < 7) note++;
+			else { 
+				timer.stop();
+				firePropertyChange(TIMER_COMPLETE, false, true);
+			}
+		}
 	}
 
 	// All MouseListener implementations need these
@@ -239,9 +277,6 @@ public class InteractiveKeyboard extends JFrame {
 				InteractiveKeyboard window = new InteractiveKeyboard();
 				window.add(kb);
 				window.setVisible(true);
-				
-				kb.compTurn();
-				System.out.println("Too soon!");
 			}
 		});   
 	}
