@@ -21,16 +21,14 @@ public class SoundGenerator {
 
 			// Use first available channel
 			for (MidiChannel c : channels) {
-				System.out.print("c = " + c + " ");
 				if (c != null) {	
 					channel = c;
-					System.out.println("Channel assigned!"); // TEST
 					break;
 				}
 			}
 		} catch (Exception e) {
 			System.err.println("Error: " + e.getMessage());
-			System.err.println(e.getStackTrace());
+			e.getStackTrace();
 			return;
 		}
 	}
