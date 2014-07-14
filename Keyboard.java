@@ -9,6 +9,9 @@ import javax.swing.*;
  * and changes the key color accordingly.
  */
 class Keyboard extends JPanel implements MouseListener {
+	
+	// For testing
+	JTextArea area = new JTextArea(5, 5);
 
 	// Keyboard position in relation to containing panel
 	private Point position; 
@@ -38,8 +41,8 @@ class Keyboard extends JPanel implements MouseListener {
 	private static final int TIMER_DELAY = 500;
 	private Timer timer;
 	
-	// Current state of the game, will record keys pressed when false
-	private boolean compTurn = true;
+	// Current state of the game, will record keys pressed when true
+	private boolean reciteMode = false;
 	
 	// Melody creator and evaluator
 	private MusicTeacher teacher = new MusicTeacher();
@@ -50,19 +53,14 @@ class Keyboard extends JPanel implements MouseListener {
 		initKeyboard();
 	}
 
-	public Keyboard(int x, int y) {
-		position = new Point(x, y);
-		initKeyboard();
-	}
-
 	private void initKeyboard() {
-		setWhiteKeys();
-		setBlackKeys();
+		createWhiteKeys();
+		createBlackKeys();
 		addMouseListener(this);
 	}
 
 	// Add all white keys to the array
-	private void setWhiteKeys() {
+	private void createWhiteKeys() {
 		whiteKeys = new Rectangle2D[NUM_WHITE_KEYS];
 		double x = position.getX();
 		double y = position.getY();
@@ -74,7 +72,7 @@ class Keyboard extends JPanel implements MouseListener {
 	}
 
 	// Add all black keys to the array
-	private void setBlackKeys() {
+	private void createBlackKeys() {
 		blackKeys = new Rectangle2D[NUM_BLACK_KEYS];
 		double x = position.getX() + WHITE_KEY_WIDTH - BLACK_KEY_WIDTH/2;
 		double y = position.getY();
@@ -83,7 +81,7 @@ class Keyboard extends JPanel implements MouseListener {
 					BLACK_KEY_HEIGHT);
 			x = x + WHITE_KEY_WIDTH;
 
-			// Skip over for adjacent natural notes
+			// Skip over for adjacent white notes
 			if (i%5 == 1 || i%5 == 4) {x = x + WHITE_KEY_WIDTH; }
 		}
 	}
@@ -135,9 +133,9 @@ class Keyboard extends JPanel implements MouseListener {
 	// Update information about which key is pressed. Update
 	// keyboard graphic and play sound.
 	public void mousePressed(MouseEvent e) {
-
+		
 		// Get point location
- 		Point p = new Point(e.getX(), e.getY());
+		Point p = new Point(e.getX(), e.getY());
 
 		// Check black keys first since they are on top of the white keys
 		for (int i = 0; i < blackKeys.length; i++) {
@@ -150,10 +148,11 @@ class Keyboard extends JPanel implements MouseListener {
 		for (int i = 0; i < whiteKeys.length; i++) {
 			if (whiteKeys[i].contains(p)) {
 				startNote(true, i);
-				if (compTurn == false && teacher.checkNote(i)) {
-					System.out.println("Good");
-				} else {
-					System.out.println("Bad");
+				if (reciteMode) {
+					if (!teacher.isGoodNote(i)) {
+						area.append("Bad note. Start over.");
+						teacher.resetMelody();
+					}
 				}
 				return;
 			}
@@ -163,6 +162,12 @@ class Keyboard extends JPanel implements MouseListener {
 	// Clear information about which key is pressed and reset keyboard
 	public void mouseReleased(MouseEvent e) {
 		endNote();
+		if (reciteMode && teacher.isLasteNote()) {
+			area.append("You did it! Get a new melody.");
+			teacher.clearMelody();
+			teacher.resetMelody();
+			reciteMode = false;
+		}
 	}
 	
 	private void startNote(boolean keyIsWhite, int pressedKey) {
@@ -186,18 +191,22 @@ class Keyboard extends JPanel implements MouseListener {
 	}
 	
 	// TODO - Play a melody for the user to repeat
-	public void compTurn() {
-		if (teacher.getMelodySize() == 0) {
+	public void playMelody() {
+		area.setText("");
+		area.append("Teacher plays melody.");
+		removeMouseListener(this);
+
+		if (teacher.getMelodySize() == 0)
 			teacher.createMelody();
-		}
 		timer = new Timer(TIMER_DELAY, new TimerListener());
 		timer.setInitialDelay(100);
 		timer.start();
 	}
 	
-	private void userTurn() {
-		System.out.println("Your turn"); 
-		compTurn = false;
+	private void enterReciteMode() {
+		area.append("Your turn! ");
+		addMouseListener(this);
+		reciteMode = true;
 		teacher.resetMelody();
 	}
 	
@@ -215,10 +224,10 @@ class Keyboard extends JPanel implements MouseListener {
 			}
 			else if (i == teacher.getMelodySize()) {
 				endNote();
-				userTurn();
 			}
 			else {
 				timer.stop();
+				enterReciteMode();
 			}
 			i++;
 		}

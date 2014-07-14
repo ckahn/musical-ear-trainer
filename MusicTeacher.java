@@ -4,7 +4,6 @@ public class MusicTeacher {
 	
 	private ArrayList<Integer> melody = new ArrayList<Integer>();
 	private boolean isBadNote = false;
-	private ArrayList<Integer> record = new ArrayList<Integer>();
 	private int i = 0;
 	
 	
@@ -12,19 +11,7 @@ public class MusicTeacher {
 		return isBadNote;
 	}
 	
-	public void addToRecord(int note) {
-		record.add(note);
-	}
-	
-	public void clearRecord() {
-		record.clear();
-	}
-	
-	public int getRecordSize() {
-		return record.size();
-	}
-	
-	public boolean checkNote(int note) {
+	public boolean isGoodNote(int note) {
 		if (i < getMelodySize() && note == getNextNote()) {
 			return true;
 		} else {
@@ -38,9 +25,12 @@ public class MusicTeacher {
 	}
 	
 	public void createMelody() {
-		melody.add(0);
-		for (int i = 0; i < 4; i++) {
-			int note = (int) (Math.random()*5);
+		int note = 0;
+		melody.add(note);
+		for (int i = 0; i < 3; i++) {
+			while (melody.contains(note)) {
+				note = (int) (Math.random()*8);
+			}
 			melody.add(note);
 		}
 		return;
@@ -52,5 +42,15 @@ public class MusicTeacher {
 	
 	public void resetMelody() {
 		i = 0;
+	}
+	
+	public boolean isLasteNote() {
+		if (i == getMelodySize()) {
+			return true;
+		} else return false;
+	}
+	
+	public void clearMelody() {
+		melody.clear();
 	}
 }
