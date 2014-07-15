@@ -150,7 +150,7 @@ class Keyboard extends JPanel implements MouseListener {
 				startNote(true, i);
 				if (reciteMode) {
 					if (!teacher.isGoodNote(i)) {
-						area.append("Bad note. Start over.");
+						area.append("Bad note. Start over. ");
 						teacher.resetMelody();
 					}
 				}
@@ -163,7 +163,7 @@ class Keyboard extends JPanel implements MouseListener {
 	public void mouseReleased(MouseEvent e) {
 		endNote();
 		if (reciteMode && teacher.isLasteNote()) {
-			area.append("You did it! Get a new melody.");
+			area.append("You did it! Get a new melody. ");
 			teacher.clearMelody();
 			teacher.resetMelody();
 			reciteMode = false;
@@ -193,7 +193,7 @@ class Keyboard extends JPanel implements MouseListener {
 	// TODO - Play a melody for the user to repeat
 	public void playMelody() {
 		area.setText("");
-		area.append("Teacher plays melody.");
+		area.append("Teacher plays melody. ");
 		removeMouseListener(this);
 
 		if (teacher.getMelodySize() == 0)

@@ -14,7 +14,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener {
 	// Initialize window and add keyboard
 	private MusicalEarTrainer() {
 		setTitle("Interactive Keyboard");
-		setSize(45*15+1, 500);
+		setSize(45*15+1, 350);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		JTextArea area = keyboard.area;
 				
