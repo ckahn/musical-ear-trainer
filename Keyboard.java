@@ -190,6 +190,10 @@ class Keyboard extends JPanel implements MouseListener {
 		repaint();
 	}
 	
+	public void setMelodyLength(int length) {
+		teacher.setMelodyLength(length);
+	}
+	
 	// TODO - Play a melody for the user to repeat
 	public void playMelody() {
 		area.setText("");

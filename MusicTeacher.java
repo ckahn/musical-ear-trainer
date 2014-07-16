@@ -5,7 +5,7 @@ public class MusicTeacher {
 	private ArrayList<Integer> melody = new ArrayList<Integer>();
 	private boolean isBadNote = false;
 	private int i = 0;
-	
+	private int length = 2;
 	
 	public boolean getIsBadNote() {
 		return isBadNote;
@@ -24,10 +24,14 @@ public class MusicTeacher {
 		return melody.get(i++);
 	}
 	
+	public void setMelodyLength(int len) {
+		length = len;
+	}
+	
 	public void createMelody() {
 		int note = 0;
 		melody.add(note);
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < length-1; i++) {
 			while (melody.contains(note)) {
 				note = (int) (Math.random()*8);
 			}
