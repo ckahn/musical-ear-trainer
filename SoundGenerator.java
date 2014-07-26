@@ -7,7 +7,7 @@ public class SoundGenerator {
 	
 	private Synthesizer synth;
 	private MidiChannel channel;
-	private int note;
+	private int noteNumber;
 	
 	// Connect to the computer's MIDI synthesizer.
 	public SoundGenerator() {
@@ -33,14 +33,15 @@ public class SoundGenerator {
 		}
 	}
 	
-	public void playNote(int n) {
-		note = n;
-		channel.noteOn(note, VELOCITY);
+	public void playNote(int keyID) {
+	    noteNumber = keyID + LOW_C_NOTE_NUMBER;
+		channel.noteOn(noteNumber, VELOCITY);
 	}
 	
 	public void stopNote() {
-		channel.noteOff(note);
+		channel.noteOff(noteNumber);
 	}
 	
+	private final int LOW_C_NOTE_NUMBER = 48;
 	private final int VELOCITY = 100;
 }
