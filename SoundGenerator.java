@@ -10,7 +10,7 @@ public class SoundGenerator {
 	private int noteNumber;
 	
 	// Connect to the computer's MIDI synthesizer.
-	public SoundGenerator() {
+	public SoundGenerator() throws Exception {
 		try {
 			// Get synthesizer and open it
 			synth = MidiSystem.getSynthesizer();
@@ -27,9 +27,7 @@ public class SoundGenerator {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Error: " + e.getMessage());
-			e.getStackTrace();
-			return;
+			throw new Exception();
 		}
 	}
 	
