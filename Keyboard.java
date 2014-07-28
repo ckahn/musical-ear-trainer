@@ -157,35 +157,31 @@ class Keyboard extends JPanel implements MouseListener {
 
         // Get point location
         Point p = new Point(e.getX(), e.getY());
-        int keyID;
         
         // Check black keys first since they are on top of the white keys
         for (int i = 0; i < blackKeys.length; i++) {
             if (blackKeys[i].contains(p)) {
-                keyID = getKeyID(blackKeys, i);
-                if (reciteMode) {
-                    if (!teacher.isGoodNote(keyID)) {
-                        pressedKeyColor = Color.red;
-                        teacher.resetMelody();
-                    }
-                }
-                startNote(keyID);
+                playNote(blackKeys, i);
                 return;
             }
         }
         for (int i = 0; i < whiteKeys.length; i++) {
             if (whiteKeys[i].contains(p)) {
-                keyID = getKeyID(whiteKeys, i);
-                if (reciteMode) {
-                    if (!teacher.isGoodNote(keyID)) {
-                        pressedKeyColor = Color.red;
-                        teacher.resetMelody();
-                    }
-                }
-                startNote(keyID);
+                playNote(whiteKeys, i);
                 return;
             }
         }
+    }
+
+    private void playNote(Rectangle2D[] keyArray, int i) {
+        int keyID = getKeyID(keyArray, i);
+        if (reciteMode) {
+            if (!teacher.isGoodNote(keyID)) {
+                pressedKeyColor = Color.red;
+                teacher.resetMelody();
+            }
+        }
+        startNote(keyID);
     }
 
     // Clear information about which key is pressed and reset keyboard
@@ -195,7 +191,32 @@ class Keyboard extends JPanel implements MouseListener {
             teacher.clearMelody();
             teacher.resetMelody();
             reciteMode = false;
+            flashPiano();
         }
+    }
+    
+    private void flashPiano() {
+        pressedKeyColor = new Color(64, 110, 222);
+        whiteKeyIsPressed = true;
+        pressedWhiteKey = whiteKeys.length-1;
+        timer = new Timer(30, new ActionListener() {
+            int green = 100;
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pressedKeyColor = new Color(64, green, 222);
+                repaint();
+                green += 10;
+                pressedWhiteKey--;
+                if (pressedWhiteKey < 0) {
+                    whiteKeyIsPressed = false;
+                    pressedKeyColor = Color.LIGHT_GRAY;
+                    repaint();
+                    timer.stop();
+                }
+            }  
+        });
+        timer.start();
     }
     
     private int getKeyID(Rectangle2D[] keyArray, int i) {
@@ -251,7 +272,27 @@ class Keyboard extends JPanel implements MouseListener {
         removeMouseListener(this);
         if (teacher.getMelodySize() == 0)
             teacher.createMelody();
-        timer = new Timer(TIMER_DELAY, new TimerListener());
+        timer = new Timer(TIMER_DELAY, new ActionListener() {
+            private int i = 0;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (i == 0)
+                    startNote(teacher.getNextNote());
+                else if (i < teacher.getMelodySize()) {
+                    endNote();
+                    if (firstNoteOnly) synth.playNote(teacher.getNextNote());
+                    else startNote(teacher.getNextNote());
+                }
+                else if (i == teacher.getMelodySize())
+                    endNote();
+                else {
+                    timer.stop();
+                    enterReciteMode();
+                }
+                i++;
+            }
+        });
         timer.setInitialDelay(100);
         timer.start();
     }
@@ -260,30 +301,6 @@ class Keyboard extends JPanel implements MouseListener {
         addMouseListener(this);
         reciteMode = true;
         teacher.resetMelody();
-    }
-
-    private class TimerListener implements ActionListener {
-        private int i = 0;
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (i == 0) {
-                startNote(teacher.getNextNote());
-            }
-            else if (i < teacher.getMelodySize()) {
-                endNote();
-                if (firstNoteOnly) synth.playNote(teacher.getNextNote());
-                else startNote(teacher.getNextNote());
-            }
-            else if (i == teacher.getMelodySize()) {
-                endNote();
-            }
-            else {
-                timer.stop();
-                enterReciteMode();
-            }
-            i++;
-        }
     }
 
     // All MouseListener implementations need these

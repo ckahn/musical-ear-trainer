@@ -29,8 +29,8 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
 
     // Initialize window and add keyboard
     private MusicalEarTrainer() {
-        setTitle("Interactive Keyboard");
-        setSize(45*15+1, 350);
+        setTitle("Musical Ear Trainer");
+        setSize(45*15+1, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JPanel controlPanel = new JPanel();

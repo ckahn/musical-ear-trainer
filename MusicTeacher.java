@@ -6,7 +6,7 @@ class MusicTeacher {
     private int[] scalePattern;
     private boolean isBadNote = false;
     private int i = 0;
-    private int length = 2;
+    private int melodyLength = 2;
     private int firstNote = 0;
 
     public MusicTeacher() {
@@ -48,13 +48,13 @@ class MusicTeacher {
     }
 
     public void setMelodyLength(int len) {
-        length = len;
+        melodyLength = len;
     }
 
     public void createMelody() {
         clearMelody();
         melody.add(firstNote);
-        for (int i = 0; i < length-1; i++) {
+        for (int i = 0; i < melodyLength-1; i++) {
             while (true) {
                 int next = scalePattern[(int) (Math.random()*scalePattern.length)] + firstNote;
                 if (next != melody.get(i)) {
