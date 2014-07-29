@@ -1,29 +1,30 @@
+/*
+ * A program that helps you identify intervals on a piano.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
-
+import java.beans.*;
 import javax.swing.*;
 
-/** 
- * An interactive keyboard that you can play with a mouse.
- */
 @SuppressWarnings("serial")
 public class MusicalEarTrainer extends JFrame implements ActionListener, ItemListener {
 
     Keyboard keyboard = new Keyboard();
 
-    JButton playButton = new JButton("Play");
+    JButton playButton = new JButton();
 
     JLabel keyLabel = new JLabel("Key: ");
-    String[] keyArray = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C3"};
+    String[] keyArray = {"Low C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "Mid C"};
     JComboBox<String> keyList = new JComboBox<String>(keyArray);
     
-    JLabel lengthLabel = new JLabel("Melody Length: ");
-    Integer[] lengthArray = {2, 3, 4, 5, 6, 7, 8, 9};
-    JComboBox<Integer> lengthList = new JComboBox<Integer>(lengthArray);
-    
-    JLabel tonalityLabel = new JLabel("Tonality: ");
-    String[] tonalityArray = {"Major", "Minor"};
+    JLabel tonalityLabel = new JLabel("Scale: ");
+    String[] tonalityArray = {"Major", "Minor", "Chromatic"};
     JComboBox<String> tonalityList = new JComboBox<String>(tonalityArray);
+    
+    JLabel lengthLabel = new JLabel("Length: ");
+    Integer[] lengthArray = {2, 3, 4, 5, 6, 7, 8, 9, 10};
+    JComboBox<Integer> lengthList = new JComboBox<Integer>(lengthArray);
 
     JCheckBox showBox = new JCheckBox("Only show first note");
 
@@ -35,16 +36,17 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
 
         JPanel controlPanel = new JPanel();
         keyList.setSelectedItem(keyArray[0]);
-        lengthList.setSelectedItem(2);
-        controlPanel.add(tonalityLabel);
-        controlPanel.add(tonalityList);
+        lengthList.setSelectedItem(3);
         controlPanel.add(keyLabel);
         controlPanel.add(keyList);
+        controlPanel.add(tonalityLabel);
+        controlPanel.add(tonalityList);
         controlPanel.add(lengthLabel);
         controlPanel.add(lengthList);
         controlPanel.add(showBox);
         controlPanel.add(playButton);
         
+        playButton.setText(PLAY_NEW);
         playButton.setMnemonic(KeyEvent.VK_P);
         playButton.addActionListener(this);
         lengthList.addActionListener(this);
@@ -57,8 +59,33 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
 
         getContentPane().add(keyboard, BorderLayout.CENTER);
         getContentPane().add(controlPanel, BorderLayout.PAGE_START);
+
+        keyboard.addPropertyChangeListener(new PropertyChangeListener() {
+
+            @Override
+            public void propertyChange(PropertyChangeEvent e) {
+                if (e.getNewValue() == Modes.AUTOPLAY) {
+                    setEnabledAllListeners(false);
+                } else if (e.getNewValue() == Modes.RECITE) {
+                    setEnabledAllListeners(true);
+                } else if (e.getNewValue().equals(false)) {
+                    playButton.setText(PLAY_NEW);
+                } else if (e.getNewValue().equals(true)) {
+                    playButton.setText("Repeat");
+                }
+            }
+        });
+    }
+    
+    private void setEnabledAllListeners(boolean isEnabled) {
+        tonalityList.setEnabled(isEnabled);
+        keyList.setEnabled(isEnabled);
+        lengthList.setEnabled(isEnabled);
+        playButton.setEnabled(isEnabled);
+        showBox.setEnabled(isEnabled);
     }
 
+    @Override
     public void actionPerformed (ActionEvent e) {
         if (e.getSource() == playButton) {
             keyboard.playMelody();
@@ -70,10 +97,12 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             } else if (e.getSource() == tonalityList) {
                 keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
             }
+            playButton.setText(PLAY_NEW);
             keyboard.getMusicTeacher().createMelody();
         }
     }
 
+    @Override
     public void itemStateChanged(ItemEvent e) {
         if (e.getStateChange() == ItemEvent.SELECTED) {
             keyboard.setFirstNoteOnly(true);
@@ -81,7 +110,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             keyboard.setFirstNoteOnly(false);
         }
     }
-
+    
     // Create and show application window
     public static void main(String[] args) {
 
@@ -95,4 +124,6 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             }
         });   
     }
+    
+    private final String PLAY_NEW = "Play New";
 }

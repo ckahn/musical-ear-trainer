@@ -1,20 +1,15 @@
 import java.util.ArrayList;
 
-class MusicTeacher {
+public class MusicTeacher {
 
     private ArrayList<Integer> melody = new ArrayList<Integer>();
     private int[] scalePattern;
-    private boolean isBadNote = false;
     private int i = 0;
     private int melodyLength = 2;
     private int firstNote = 0;
 
     public MusicTeacher() {
         setTonality(MAJOR);
-    }
-
-    public boolean getIsBadNote() {
-        return isBadNote;
     }
 
     public boolean isGoodNote(int keyID) {
@@ -33,11 +28,14 @@ class MusicTeacher {
     public void setTonality(int tonality) {
         int[] majorScale = {0, 2, 4, 5, 7, 9, 11, 12};
         int[] minorScale = {0, 2, 3, 5, 7, 8, 10, 12};
+        int[] chromaticScale = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
         if (tonality == MAJOR) {
             scalePattern = majorScale;
         } else if (tonality == MINOR) {
             scalePattern = minorScale;
+        } else if (tonality == CHROMATIC) {
+            scalePattern = chromaticScale;
         } else {
             throw new IllegalArgumentException();
         }
@@ -73,7 +71,7 @@ class MusicTeacher {
         i = 0;
     }
 
-    public boolean isLasteNote() {
+    public boolean isLastNote() {
         if (i == getMelodySize()) {
             return true;
         } else return false;
@@ -85,4 +83,5 @@ class MusicTeacher {
 
     private final int MAJOR = 0;
     private final int MINOR = 1;
+    private final int CHROMATIC = 2;
 }

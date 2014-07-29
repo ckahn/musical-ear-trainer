@@ -1,7 +1,8 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
-
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import javax.swing.*;
 
 /**
@@ -41,13 +42,18 @@ class Keyboard extends JPanel implements MouseListener {
     // time between auto-played notes
     private static final int TIMER_DELAY = 500;
 
-    // when in reciteMode, program evaluates user input
-    private boolean reciteMode = false;
+    // set mode
+    private Modes mode;
+    private PropertyChangeSupport rPcs = new PropertyChangeSupport(this);
+    
+    // whether to repeat the current melody or create a new one
+    private boolean repeatMelody;
+    private PropertyChangeSupport rRm = new PropertyChangeSupport(this);
     
     // whether to show only the first auto-played note, otherwise show all
     private boolean firstNoteOnly;
 
-    // melody creator and input evaluator
+    // creates melodies and evaluates user's performance
     private MusicTeacher teacher = new MusicTeacher();
 
     // constructors
@@ -62,18 +68,20 @@ class Keyboard extends JPanel implements MouseListener {
     }
 
     private void initKeyboard() {
+        createWhiteKeys();
+        createBlackKeys();
+        addMouseListener(this);
         try {
             synth = new SoundGenerator();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Could not access your computer's MIDI synthesizer.");
             System.exit(-1);
         }
-        createWhiteKeys();
-        createBlackKeys();
-        addMouseListener(this);
+        setMode(Modes.IDLE);
+        setRepeatMelody(false);
     }
 
-    // Add all white keys to the array
+    // add all white keys to the array
     private void createWhiteKeys() {
         whiteKeys = new Rectangle2D[NUM_WHITE_KEYS];
         double x = position.getX();
@@ -85,7 +93,7 @@ class Keyboard extends JPanel implements MouseListener {
         }
     }
 
-    // Add all black keys to the array
+    // add all black keys to the array
     private void createBlackKeys() {
         blackKeys = new Rectangle2D[NUM_BLACK_KEYS];
         double x = position.getX() + WHITE_KEY_WIDTH - BLACK_KEY_WIDTH/2;
@@ -100,7 +108,7 @@ class Keyboard extends JPanel implements MouseListener {
         }
     }
 
-    // Paint the JPanel
+    // paint the JPanel
     @Override
     public void paintComponent(Graphics g) {
         // Cast g to Graphics2D to access RenderingHints, drawing objects, etc.
@@ -144,17 +152,21 @@ class Keyboard extends JPanel implements MouseListener {
         }
     }
 
-    public int getNote(boolean isWhiteKey, int i) {
+    /**
+     * Returns an integer that the synthesizer converts to a pitch.
+     * @param isWhiteKey whether the clicked piano key is white
+     * @param i the index of the key in its array
+     * @return an integer representing the pitch of the clicked piano key
+     */
+    public int getNoteNumber(boolean isWhiteKey, int i) {
         if (isWhiteKey) 
             return LOW_C + whiteKeyIDs[i];
         else
             return LOW_C + blackKeyIDs[i];
     }
 
-    // Update information about which key is pressed. Update
-    // keyboard graphic and play sound.
     public void mousePressed(MouseEvent e) {
-
+        
         // Get point location
         Point p = new Point(e.getX(), e.getY());
         
@@ -175,7 +187,7 @@ class Keyboard extends JPanel implements MouseListener {
 
     private void playNote(Rectangle2D[] keyArray, int i) {
         int keyID = getKeyID(keyArray, i);
-        if (reciteMode) {
+        if (mode == Modes.RECITE) {
             if (!teacher.isGoodNote(keyID)) {
                 pressedKeyColor = Color.red;
                 teacher.resetMelody();
@@ -184,17 +196,44 @@ class Keyboard extends JPanel implements MouseListener {
         startNote(keyID);
     }
 
+    private void startNote(int keyID) {
+        if (isWhiteKey(keyID)) {
+            whiteKeyIsPressed = true;
+            pressedWhiteKey = getKeyIndex(keyID);
+        } else {
+            blackKeyIsPressed = true;
+            pressedBlackKey = getKeyIndex(keyID);
+        }
+        synth.playNote(keyID);
+        repaint();
+    }
+
     // Clear information about which key is pressed and reset keyboard
     public void mouseReleased(MouseEvent e) {
         endNote();
-        if (reciteMode && teacher.isLasteNote()) {
+        if (mode == Modes.RECITE && teacher.isLastNote()) {
             teacher.clearMelody();
             teacher.resetMelody();
-            reciteMode = false;
-            flashPiano();
+            setRepeatMelody(false);
+            setMode(Modes.IDLE);
         }
     }
+
+    private void endNote() {
+        synth.stopNote();
+        blackKeyIsPressed = false;
+        whiteKeyIsPressed = false;
+        pressedKeyColor = Color.LIGHT_GRAY;
+        repaint();
+    }
     
+    private void setRepeatMelody(boolean repeat) {
+        boolean oldRepeat = repeatMelody;
+        repeatMelody = repeat;
+        rRm.firePropertyChange("repeatMelody", oldRepeat, repeatMelody);
+    }
+
+    /*
     private void flashPiano() {
         pressedKeyColor = new Color(64, 110, 222);
         whiteKeyIsPressed = true;
@@ -217,7 +256,7 @@ class Keyboard extends JPanel implements MouseListener {
             }  
         });
         timer.start();
-    }
+    }*/
     
     private int getKeyID(Rectangle2D[] keyArray, int i) {
         if (keyArray == whiteKeys) return whiteKeyIDs[i];
@@ -238,26 +277,6 @@ class Keyboard extends JPanel implements MouseListener {
         }
         return false;
     }
-
-    private void startNote(int keyID) {
-        if (isWhiteKey(keyID)) {
-            whiteKeyIsPressed = true;
-            pressedWhiteKey = getKeyIndex(keyID);
-        } else {
-            blackKeyIsPressed = true;
-            pressedBlackKey = getKeyIndex(keyID);
-        }
-        synth.playNote(keyID);
-        repaint();
-    }
-
-    private void endNote() {
-        synth.stopNote();
-        blackKeyIsPressed = false;
-        whiteKeyIsPressed = false;
-        pressedKeyColor = Color.LIGHT_GRAY;
-        repaint();
-    }
     
     public void setFirstNoteOnly(boolean firstOnly) {
         firstNoteOnly = firstOnly;
@@ -269,7 +288,8 @@ class Keyboard extends JPanel implements MouseListener {
 
     // TODO - Play a melody for the user to repeat
     public void playMelody() {
-        removeMouseListener(this);
+        setMode(Modes.AUTOPLAY);
+        setRepeatMelody(true);
         if (teacher.getMelodySize() == 0)
             teacher.createMelody();
         timer = new Timer(TIMER_DELAY, new ActionListener() {
@@ -284,11 +304,10 @@ class Keyboard extends JPanel implements MouseListener {
                     if (firstNoteOnly) synth.playNote(teacher.getNextNote());
                     else startNote(teacher.getNextNote());
                 }
-                else if (i == teacher.getMelodySize())
-                    endNote();
                 else {
+                    endNote();
                     timer.stop();
-                    enterReciteMode();
+                    setMode(Modes.RECITE);
                 }
                 i++;
             }
@@ -297,10 +316,26 @@ class Keyboard extends JPanel implements MouseListener {
         timer.start();
     }
 
-    private void enterReciteMode() {
-        addMouseListener(this);
-        reciteMode = true;
-        teacher.resetMelody();
+    private void setMode(Modes newMode) {
+        Modes oldMode = mode;
+        mode = newMode;
+        rPcs.firePropertyChange("mode", oldMode, mode);
+        if (mode == Modes.RECITE) {
+            teacher.resetMelody();
+            addMouseListener(this);
+        } else if (mode == Modes.AUTOPLAY){
+            removeMouseListener(this);
+        }
+    }
+    
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        rRm.addPropertyChangeListener(listener);
+        rPcs.addPropertyChangeListener(listener);
+    }
+    
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        rRm.removePropertyChangeListener(listener);
+        rPcs.removePropertyChangeListener(listener);
     }
 
     // All MouseListener implementations need these
