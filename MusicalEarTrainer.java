@@ -57,44 +57,43 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         melodyGroup.add(tempoSpinner);
 
         // add group box to pane
-        GridBagConstraints mgc = new GridBagConstraints();
-        mgc.gridx = 0;
-        mgc.gridy = 0;
-        mgc.gridwidth = 2;
-        mgc.weightx = 0.5;
-        mgc.fill = GridBagConstraints.HORIZONTAL;
-        mgc.insets = new Insets(5, 5, 5, 5);
-        pane.add(melodyGroup, mgc);
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 2;
+        c.weightx = 0.5;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets = new Insets(5, 5, 5, 5);
+        pane.add(melodyGroup, c);
         
-        GridBagConstraints cc = new GridBagConstraints();
-        cc.gridx = 0;
-        cc.gridy = 1;
-        cc.weightx = 0.5;
-        cc.anchor = GridBagConstraints.LINE_END;
-        cc.insets = new Insets(0, 0, 0, 10);
-        pane.add(showBox, cc);
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 1;
+        c.anchor = GridBagConstraints.LINE_END;
+        c.insets = new Insets(0, 0, 0, 10);
+        pane.add(showBox, c);
         
-        GridBagConstraints bc = new GridBagConstraints();
-        bc.gridx = 1;
-        bc.gridy = 1;
-        cc.weightx = 0.5;
-        cc.anchor = GridBagConstraints.LINE_END;
-        bc.insets = new Insets(0, 0, 0, 7);
-        pane.add(playButton, bc);
+        c = new GridBagConstraints();
+        c.gridx = 1;
+        c.gridy = 1;
+        c.weightx = 0;
+        c.anchor = GridBagConstraints.LINE_END;
+        c.insets = new Insets(0, 0, 0, 7);
+        pane.add(playButton, c);
         
         keyboard = new Keyboard();
-        GridBagConstraints kbc = new GridBagConstraints();
-        kbc.gridx = 0;
-        kbc.gridy = 2;
-        kbc.gridwidth = 2;
-        kbc.weightx = 0.5;
-        kbc.weighty = 0.5;
-        kbc.fill = GridBagConstraints.HORIZONTAL;
-        kbc.anchor = GridBagConstraints.PAGE_END;
-        kbc.insets = new Insets(7, 7, 7, 7);
-        pane.add(keyboard, kbc);
+        c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 2;
+        c.weightx = 0.5;
+        c.weighty = 0.5;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.anchor = GridBagConstraints.PAGE_END;
+        c.insets = new Insets(7, 7, 7, 7);
+        pane.add(keyboard, c);
 
-        setSize(pane.getPreferredSize().width, pane.getPreferredSize().height);
         setResizable(false);
         getContentPane().add(pane);
         
@@ -147,7 +146,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             } else if (e.getSource() == tonalityList) {
                 keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
             }
-            playButton.setText(PLAY_NEW);
+            keyboard.setRepeatMelody(false);
             keyboard.getMusicTeacher().createMelody();
         }
     }
@@ -170,7 +169,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         } else if (source == tempoSpinner) {
             keyboard.setTempo((int)source.getValue());
         }
-        playButton.setText(PLAY_NEW);
+        keyboard.setRepeatMelody(false);
         keyboard.getMusicTeacher().createMelody();
     }
     
@@ -183,11 +182,11 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             @Override
             public void run() {
                 MusicalEarTrainer window = new MusicalEarTrainer();
+                window.pack();
                 window.setVisible(true);
             }
         });   
     }
     
     private final String PLAY_NEW = "Play New";
-
 }

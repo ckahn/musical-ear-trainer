@@ -54,7 +54,7 @@ class Keyboard extends JPanel implements MouseListener {
     private MusicTeacher teacher = new MusicTeacher();
     
     // tempo of auto-played melody, in beats per minute
-    private int tempo = 100;
+    private int tempo = 160;
 
     // constructors
     public Keyboard() {
@@ -71,7 +71,7 @@ class Keyboard extends JPanel implements MouseListener {
         createWhiteKeys();
         createBlackKeys();
         setPreferredSize(new Dimension((int)(WHITE_KEY_WIDTH*whiteKeys.length+position.getX()*2+1), 
-                (int)(WHITE_KEY_HEIGHT+position.getY()*2)));
+                (int)(WHITE_KEY_HEIGHT+position.getY()*2+1)));
         addMouseListener(this);
         try {
             synth = new SoundGenerator();
@@ -229,7 +229,7 @@ class Keyboard extends JPanel implements MouseListener {
         repaint();
     }
     
-    private void setRepeatMelody(boolean repeat) {
+    public void setRepeatMelody(boolean repeat) {
         boolean oldRepeat = repeatMelody;
         teacher.resetMelody();
         repeatMelody = repeat;
