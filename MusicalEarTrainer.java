@@ -11,9 +11,9 @@ import javax.swing.event.*;
 @SuppressWarnings("serial")
 public class MusicalEarTrainer extends JFrame implements ActionListener, ItemListener, ChangeListener {
 
-    Keyboard keyboard = new Keyboard();
+    Keyboard keyboard;
 
-    JButton playButton = new JButton();
+    JButton playButton = new JButton("Play New");
 
     JLabel keyLabel = new JLabel("Key: ");
     String[] keyArray = {"Low C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "Mid C"};
@@ -28,7 +28,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
     JSpinner lengthSpinner = new JSpinner(lengthModel);
     
     JLabel tempoLabel = new JLabel("Tempo: ");
-    SpinnerModel tempoModel = new SpinnerNumberModel(120, 10, 300, 1);
+    SpinnerModel tempoModel = new SpinnerNumberModel(160, 60, 480, 1);
     JSpinner tempoSpinner = new JSpinner(tempoModel);
 
     JCheckBox showBox = new JCheckBox("Only show first note");
@@ -36,31 +36,69 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
     // Initialize window and add keyboard
     private MusicalEarTrainer() {
         setTitle("Musical Ear Trainer");
-        setSize(45*15+1, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        JPanel pane = new JPanel(new GridBagLayout());
+        
+        // create group box and add components
+        JPanel melodyGroup = new JPanel();
+        melodyGroup.setBorder(BorderFactory.createTitledBorder("Melody Properties"));
+        Dimension dim = new Dimension(15, 0);
+        melodyGroup.add(keyLabel);
+        melodyGroup.add(keyList);
+        melodyGroup.add(new Box.Filler(dim, dim, dim));
+        melodyGroup.add(tonalityLabel);
+        melodyGroup.add(tonalityList);
+        melodyGroup.add(new Box.Filler(dim, dim, dim));
+        melodyGroup.add(lengthLabel);
+        melodyGroup.add(lengthSpinner);
+        melodyGroup.add(new Box.Filler(dim, dim, dim));
+        melodyGroup.add(tempoLabel);
+        melodyGroup.add(tempoSpinner);
 
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        // add group box to pane
+        GridBagConstraints mgc = new GridBagConstraints();
+        mgc.gridx = 0;
+        mgc.gridy = 0;
+        mgc.gridwidth = 2;
+        mgc.weightx = 0.5;
+        mgc.fill = GridBagConstraints.HORIZONTAL;
+        mgc.insets = new Insets(5, 5, 5, 5);
+        pane.add(melodyGroup, mgc);
         
-        JPanel melodyProperties = new JPanel();
-        melodyProperties.setBorder(BorderFactory.createTitledBorder("Melody Properties"));
+        GridBagConstraints cc = new GridBagConstraints();
+        cc.gridx = 0;
+        cc.gridy = 1;
+        cc.weightx = 0.5;
+        cc.anchor = GridBagConstraints.LINE_END;
+        cc.insets = new Insets(0, 0, 0, 10);
+        pane.add(showBox, cc);
+        
+        GridBagConstraints bc = new GridBagConstraints();
+        bc.gridx = 1;
+        bc.gridy = 1;
+        cc.weightx = 0.5;
+        cc.anchor = GridBagConstraints.LINE_END;
+        bc.insets = new Insets(0, 0, 0, 7);
+        pane.add(playButton, bc);
+        
+        keyboard = new Keyboard();
+        GridBagConstraints kbc = new GridBagConstraints();
+        kbc.gridx = 0;
+        kbc.gridy = 2;
+        kbc.gridwidth = 2;
+        kbc.weightx = 0.5;
+        kbc.weighty = 0.5;
+        kbc.fill = GridBagConstraints.HORIZONTAL;
+        kbc.anchor = GridBagConstraints.PAGE_END;
+        kbc.insets = new Insets(7, 7, 7, 7);
+        pane.add(keyboard, kbc);
+
+        setSize(pane.getPreferredSize().width, pane.getPreferredSize().height);
+        setResizable(false);
+        getContentPane().add(pane);
+        
         keyList.setSelectedItem(keyArray[0]);
-        melodyProperties.add(keyLabel);
-        melodyProperties.add(keyList);
-        melodyProperties.add(tonalityLabel);
-        melodyProperties.add(tonalityList);
-        melodyProperties.add(lengthLabel);
-        melodyProperties.add(lengthSpinner);
-        melodyProperties.add(tempoLabel);
-        melodyProperties.add(tempoSpinner);
-        
-        JPanel playOptions = new JPanel((new FlowLayout(FlowLayout.RIGHT)));
-        playOptions.add(showBox);
-        playOptions.add(playButton);
-        
-        topPanel.add(melodyProperties);
-        topPanel.add(playOptions);
-        
         playButton.setText(PLAY_NEW);
         playButton.setMnemonic(KeyEvent.VK_P);
         playButton.addActionListener(this);
@@ -72,13 +110,6 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         showBox.setSelected(false);
         keyboard.setFirstNoteOnly(false);
         showBox.addItemListener(this);
-
-        getContentPane().add(topPanel, BorderLayout.PAGE_START);
-        getContentPane().add(keyboard, BorderLayout.CENTER);
-        Dimension dim = new Dimension (5, 0);
-        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.PAGE_END);
-        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.LINE_START);
-        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.LINE_END);
 
         keyboard.addPropertyChangeListener(new PropertyChangeListener() {
 
@@ -128,8 +159,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         } else {
             keyboard.setFirstNoteOnly(false);
         }
-    }
-    
+    }   
 
     // Listen to the spinners
     @Override
@@ -137,10 +167,8 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         JSpinner source = (JSpinner)e.getSource();
         if (source == lengthSpinner) {
             keyboard.getMusicTeacher().setMelodyLength((int)source.getValue());
-            System.out.println("Length = " + (int)source.getValue());
         } else if (source == tempoSpinner) {
             keyboard.setTempo((int)source.getValue());
-            System.out.println("Tempo = " + (int)source.getValue());
         }
         playButton.setText(PLAY_NEW);
         keyboard.getMusicTeacher().createMelody();
