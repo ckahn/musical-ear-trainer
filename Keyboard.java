@@ -39,9 +39,6 @@ class Keyboard extends JPanel implements MouseListener {
     // timer for auto-playing notes
     private Timer timer;
     
-    // time between auto-played notes
-    private static final int TIMER_DELAY = 500;
-
     // set mode
     private Modes mode;
     private PropertyChangeSupport rPcs = new PropertyChangeSupport(this);
@@ -55,6 +52,9 @@ class Keyboard extends JPanel implements MouseListener {
 
     // creates melodies and evaluates user's performance
     private MusicTeacher teacher = new MusicTeacher();
+    
+    // tempo of auto-played melody, in beats per minute
+    private int tempo = 100;
 
     // constructors
     public Keyboard() {
@@ -292,7 +292,7 @@ class Keyboard extends JPanel implements MouseListener {
         setRepeatMelody(true);
         if (teacher.getMelodySize() == 0)
             teacher.createMelody();
-        timer = new Timer(TIMER_DELAY, new ActionListener() {
+        timer = new Timer(getTempo(tempo), new ActionListener() {
             private int i = 0;
 
             @Override
@@ -352,4 +352,14 @@ class Keyboard extends JPanel implements MouseListener {
     private final double BLACK_KEY_WIDTH = WHITE_KEY_WIDTH * 0.5;
 
     private final int LOW_C = 48;
+
+    public void setTempo(int newBpm) {
+        tempo = newBpm;
+        
+    }
+    
+    // returns the tempo of the auto-play, in milliseconds per note
+    private int getTempo(int bpm) {
+        return (int) (bpm * 4.167);
+    }
 }

@@ -5,7 +5,7 @@ public class MusicTeacher {
     private ArrayList<Integer> melody = new ArrayList<Integer>();
     private int[] scalePattern;
     private int i = 0;
-    private int melodyLength = 2;
+    private int melodyLength = 3;
     private int firstNote = 0;
 
     public MusicTeacher() {

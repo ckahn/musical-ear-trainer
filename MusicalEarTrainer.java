@@ -6,9 +6,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
 import javax.swing.*;
+import javax.swing.event.*;
 
 @SuppressWarnings("serial")
-public class MusicalEarTrainer extends JFrame implements ActionListener, ItemListener {
+public class MusicalEarTrainer extends JFrame implements ActionListener, ItemListener, ChangeListener {
 
     Keyboard keyboard = new Keyboard();
 
@@ -23,42 +24,61 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
     JComboBox<String> tonalityList = new JComboBox<String>(tonalityArray);
     
     JLabel lengthLabel = new JLabel("Length: ");
-    Integer[] lengthArray = {2, 3, 4, 5, 6, 7, 8, 9, 10};
-    JComboBox<Integer> lengthList = new JComboBox<Integer>(lengthArray);
+    SpinnerModel lengthModel = new SpinnerNumberModel(3, 2, 20, 1);
+    JSpinner lengthSpinner = new JSpinner(lengthModel);
+    
+    JLabel tempoLabel = new JLabel("Tempo: ");
+    SpinnerModel tempoModel = new SpinnerNumberModel(120, 10, 300, 1);
+    JSpinner tempoSpinner = new JSpinner(tempoModel);
 
     JCheckBox showBox = new JCheckBox("Only show first note");
 
     // Initialize window and add keyboard
     private MusicalEarTrainer() {
         setTitle("Musical Ear Trainer");
-        setSize(45*15+1, 250);
+        setSize(45*15+1, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel controlPanel = new JPanel();
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
+        
+        JPanel melodyProperties = new JPanel();
+        melodyProperties.setBorder(BorderFactory.createTitledBorder("Melody Properties"));
         keyList.setSelectedItem(keyArray[0]);
-        lengthList.setSelectedItem(3);
-        controlPanel.add(keyLabel);
-        controlPanel.add(keyList);
-        controlPanel.add(tonalityLabel);
-        controlPanel.add(tonalityList);
-        controlPanel.add(lengthLabel);
-        controlPanel.add(lengthList);
-        controlPanel.add(showBox);
-        controlPanel.add(playButton);
+        melodyProperties.add(keyLabel);
+        melodyProperties.add(keyList);
+        melodyProperties.add(tonalityLabel);
+        melodyProperties.add(tonalityList);
+        melodyProperties.add(lengthLabel);
+        melodyProperties.add(lengthSpinner);
+        melodyProperties.add(tempoLabel);
+        melodyProperties.add(tempoSpinner);
+        
+        JPanel playOptions = new JPanel((new FlowLayout(FlowLayout.RIGHT)));
+        playOptions.add(showBox);
+        playOptions.add(playButton);
+        
+        topPanel.add(melodyProperties);
+        topPanel.add(playOptions);
         
         playButton.setText(PLAY_NEW);
         playButton.setMnemonic(KeyEvent.VK_P);
         playButton.addActionListener(this);
-        lengthList.addActionListener(this);
         keyList.addActionListener(this);
         tonalityList.addActionListener(this);
+        tempoSpinner.addChangeListener(this);
+        lengthSpinner.addChangeListener(this);
         
         showBox.setSelected(false);
         keyboard.setFirstNoteOnly(false);
         showBox.addItemListener(this);
 
+        getContentPane().add(topPanel, BorderLayout.PAGE_START);
         getContentPane().add(keyboard, BorderLayout.CENTER);
-        getContentPane().add(controlPanel, BorderLayout.PAGE_START);
+        Dimension dim = new Dimension (5, 0);
+        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.PAGE_END);
+        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.LINE_START);
+        getContentPane().add(new JPanel().add(new Box.Filler(dim, dim, dim)),BorderLayout.LINE_END);
 
         keyboard.addPropertyChangeListener(new PropertyChangeListener() {
 
@@ -80,9 +100,10 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
     private void setEnabledAllListeners(boolean isEnabled) {
         tonalityList.setEnabled(isEnabled);
         keyList.setEnabled(isEnabled);
-        lengthList.setEnabled(isEnabled);
         playButton.setEnabled(isEnabled);
         showBox.setEnabled(isEnabled);
+        tempoSpinner.setEnabled(isEnabled);
+        lengthSpinner.setEnabled(isEnabled);
     }
 
     @Override
@@ -92,8 +113,6 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         } else {
             if (e.getSource() == keyList) {
                 keyboard.getMusicTeacher().setKey(keyList.getSelectedIndex());
-            } else if (e.getSource() == lengthList) {
-                keyboard.getMusicTeacher().setMelodyLength((int) lengthList.getSelectedItem());
             } else if (e.getSource() == tonalityList) {
                 keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
             }
@@ -111,6 +130,22 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         }
     }
     
+
+    // Listen to the spinners
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        JSpinner source = (JSpinner)e.getSource();
+        if (source == lengthSpinner) {
+            keyboard.getMusicTeacher().setMelodyLength((int)source.getValue());
+            System.out.println("Length = " + (int)source.getValue());
+        } else if (source == tempoSpinner) {
+            keyboard.setTempo((int)source.getValue());
+            System.out.println("Tempo = " + (int)source.getValue());
+        }
+        playButton.setText(PLAY_NEW);
+        keyboard.getMusicTeacher().createMelody();
+    }
+    
     // Create and show application window
     public static void main(String[] args) {
 
@@ -126,4 +161,5 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
     }
     
     private final String PLAY_NEW = "Play New";
+
 }
