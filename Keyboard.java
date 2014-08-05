@@ -12,21 +12,12 @@ import javax.swing.*;
  */
 @SuppressWarnings("serial")
 class Keyboard extends JPanel implements MouseListener {
+    
+    // array of the piano keys
+    Key keys[];
 
     // keyboard position in relation to containing panel
     private Point position; 
-
-    // arrays for the piano keys
-    private Rectangle2D[] whiteKeys;
-    private Rectangle2D[] blackKeys;
-
-    // variables to track pressed keys
-    private boolean whiteKeyIsPressed = false;
-    private boolean blackKeyIsPressed = false;
-    private int pressedWhiteKey;
-    private int pressedBlackKey;
-    
-    private Color pressedKeyColor = Color.LIGHT_GRAY;
 
     // unique key IDs for white and black keys, in ascending order
     private int[] blackKeyIDs = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
@@ -39,11 +30,12 @@ class Keyboard extends JPanel implements MouseListener {
     // timer for auto-playing notes
     private Timer timer;
     
-    // set mode
+    // make this a bound property so changes to it will affect the 
+    // controls in the window
     private Modes mode;
     private PropertyChangeSupport rPcs = new PropertyChangeSupport(this);
     
-    // whether to repeat the current melody or create a new one
+    // whether to repeat the current melody or create a new one, bound it
     private boolean repeatMelody;
     private PropertyChangeSupport rRm = new PropertyChangeSupport(this);
     
@@ -62,16 +54,10 @@ class Keyboard extends JPanel implements MouseListener {
         initKeyboard();
     }
     
-    /*public Keyboard(int x, int y) {
-        position = new Point(x, y);
-        initKeyboard();
-    }*/
-    
     private void initKeyboard() {
-        createWhiteKeys();
-        createBlackKeys();
-        setPreferredSize(new Dimension((int)(WHITE_KEY_WIDTH*whiteKeys.length+position.getX()*2+1), 
-                (int)(WHITE_KEY_HEIGHT+position.getY()*2+1)));
+        createKeys();
+        setPreferredSize(new Dimension((int)(WHITE_KEY_WIDTH*NUM_WHITE_KEYS+1), 
+                (int)(WHITE_KEY_HEIGHT+1)));
         addMouseListener(this);
         try {
             synth = new SoundGenerator();
@@ -82,31 +68,36 @@ class Keyboard extends JPanel implements MouseListener {
         setMode(Modes.IDLE);
         setRepeatMelody(false);
     }
+    
+    // add all keys to the array
+    private void createKeys() {
+        keys = new Key[NUM_WHITE_KEYS + NUM_BLACK_KEYS];
+        createWhiteKeys();
+        createBlackKeys();
+    }
 
     // add all white keys to the array
     private void createWhiteKeys() {
-        whiteKeys = new Rectangle2D[NUM_WHITE_KEYS];
         double x = position.getX();
         double y = position.getY();
-        for (int i = 0; i < whiteKeys.length; i++) {
-            whiteKeys[i] = new Rectangle2D.Double(x, y, WHITE_KEY_WIDTH, 
-                    WHITE_KEY_HEIGHT);
+        for (int i : whiteKeyIDs) {
+            keys[i] = new Key(x, y, WHITE_KEY_WIDTH, 
+                    WHITE_KEY_HEIGHT, Color.WHITE, true);
             x = x + WHITE_KEY_WIDTH;
         }
     }
 
     // add all black keys to the array
     private void createBlackKeys() {
-        blackKeys = new Rectangle2D[NUM_BLACK_KEYS];
         double x = position.getX() + WHITE_KEY_WIDTH - BLACK_KEY_WIDTH/2;
         double y = position.getY();
-        for (int i = 0; i < blackKeys.length; i++) {
-            blackKeys[i] = new Rectangle2D.Double(x, y, BLACK_KEY_WIDTH, 
-                    BLACK_KEY_HEIGHT);
+        for (int i : blackKeyIDs) {
+            keys[i] = new Key(x, y, BLACK_KEY_WIDTH, 
+                    BLACK_KEY_HEIGHT, Color.BLACK, false);
             x = x + WHITE_KEY_WIDTH;
 
             // Skip over for adjacent white notes
-            if (i%5 == 1 || i%5 == 4) {x = x + WHITE_KEY_WIDTH; }
+            if (i == 3 || i == 10 || i == 15) {x = x + WHITE_KEY_WIDTH; }
         }
     }
 
@@ -122,89 +113,51 @@ class Keyboard extends JPanel implements MouseListener {
         rh.put(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
         g2.setRenderingHints(rh);
-
+        
         // Draw the white keys
-        for (int i = 0; i < whiteKeys.length; i++) {
-            g2.setColor(Color.white);
-            g2.fill(whiteKeys[i]);
+        for (int i : whiteKeyIDs) {
+            g2.setColor(keys[i].getColor());
+            g2.fill(keys[i]);
             g2.setColor(Color.black);
-            g2.draw(whiteKeys[i]);
-        }
-
-        // Color pressed white key, if applicable
-        if (whiteKeyIsPressed) {
-            g2.setColor(pressedKeyColor);
-            g2.fill(whiteKeys[pressedWhiteKey]);
-            g2.setColor(Color.black);
-            g2.draw(whiteKeys[pressedWhiteKey]);
+            g2.draw(keys[i]);
         }
 
         // Draw the black keys
-        g2.setColor(Color.black);
-        for (int i = 0; i < blackKeys.length; i++) {
-            g2.fill(blackKeys[i]);
-        }
-
-        // Color pressed black key, if applicable
-        if (blackKeyIsPressed) {
-            g2.setColor(pressedKeyColor);
-            g2.fill(blackKeys[pressedBlackKey]);
+        for (int i : blackKeyIDs) {
+            g2.setColor(keys[i].getColor());
+            g2.fill(keys[i]);
             g2.setColor(Color.black);
-            g2.draw(blackKeys[pressedBlackKey]);
+            g2.draw(keys[i]);
         }
-    }
-
-    /**
-     * Returns an integer that the synthesizer converts to a pitch.
-     * @param isWhiteKey whether the clicked piano key is white
-     * @param i the index of the key in its array
-     * @return an integer representing the pitch of the clicked piano key
-     */
-    public int getNoteNumber(boolean isWhiteKey, int i) {
-        if (isWhiteKey) 
-            return LOW_C + whiteKeyIDs[i];
-        else
-            return LOW_C + blackKeyIDs[i];
     }
 
     public void mousePressed(MouseEvent e) {
         
         // Get point location
-        Point p = new Point(e.getX(), e.getY());
+        Point p = new Point(e.getX(), e.getY());       
         
         // Check black keys first since they are on top of the white keys
-        for (int i = 0; i < blackKeys.length; i++) {
-            if (blackKeys[i].contains(p)) {
-                playNote(blackKeys, i);
+        for (int i : blackKeyIDs) {
+            if (keys[i].contains(p)) {
+                playNote(i);
                 return;
             }
         }
-        for (int i = 0; i < whiteKeys.length; i++) {
-            if (whiteKeys[i].contains(p)) {
-                playNote(whiteKeys, i);
+        
+        for (int i : whiteKeyIDs) {
+            if (keys[i].contains(p)) {
+                playNote(i);
                 return;
             }
         }
     }
 
-    private void playNote(Rectangle2D[] keyArray, int i) {
-        int keyID = getKeyID(keyArray, i);
-        if (mode == Modes.RECITE) {
-            if (!teacher.isGoodNote(keyID)) {
-                pressedKeyColor = Color.red;
-                teacher.resetMelody();
-            }
-        }
-        startNote(keyID);
-    }
-
-    private void startNote(int keyID) {
-        if (isWhiteKey(keyID)) {
-            whiteKeyIsPressed = true;
-            pressedWhiteKey = getKeyIndex(keyID);
+    private void playNote(int keyID) {
+        if (mode == Modes.RECITE && !teacher.isGoodNote(keyID)) {
+            keys[keyID].setColor(Color.red);
+            teacher.resetMelody();
         } else {
-            blackKeyIsPressed = true;
-            pressedBlackKey = getKeyIndex(keyID);
+            keys[keyID].setColor(Color.LIGHT_GRAY);
         }
         synth.playNote(keyID);
         repaint();
@@ -223,9 +176,9 @@ class Keyboard extends JPanel implements MouseListener {
 
     private void endNote() {
         synth.stopNote();
-        blackKeyIsPressed = false;
-        whiteKeyIsPressed = false;
-        pressedKeyColor = Color.LIGHT_GRAY;
+        for (Key key : keys) {
+            key.resetColor();
+        }
         repaint();
     }
     
@@ -236,51 +189,6 @@ class Keyboard extends JPanel implements MouseListener {
         rRm.firePropertyChange("repeatMelody", oldRepeat, repeatMelody);
     }
 
-    /*
-    private void flashPiano() {
-        pressedKeyColor = new Color(64, 110, 222);
-        whiteKeyIsPressed = true;
-        pressedWhiteKey = whiteKeys.length-1;
-        timer = new Timer(30, new ActionListener() {
-            int green = 100;
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                pressedKeyColor = new Color(64, green, 222);
-                repaint();
-                green += 10;
-                pressedWhiteKey--;
-                if (pressedWhiteKey < 0) {
-                    whiteKeyIsPressed = false;
-                    pressedKeyColor = Color.LIGHT_GRAY;
-                    repaint();
-                    timer.stop();
-                }
-            }  
-        });
-        timer.start();
-    }*/
-    
-    private int getKeyID(Rectangle2D[] keyArray, int i) {
-        if (keyArray == whiteKeys) return whiteKeyIDs[i];
-        else return blackKeyIDs[i];
-    }
-
-    private int getKeyIndex(int keyID) {
-        for (int i = 0; i < whiteKeyIDs.length; i++)
-            if (whiteKeyIDs[i] == keyID) return i;
-        for (int i = 0; i < blackKeyIDs.length; i++)
-            if (blackKeyIDs[i] == keyID) return i;
-        return -1;
-    }
-    
-    private boolean isWhiteKey(int keyID) {
-        for (int i : whiteKeyIDs) {
-            if (keyID == i) return true;
-        }
-        return false;
-    }
-    
     public void setFirstNoteOnly(boolean firstOnly) {
         firstNoteOnly = firstOnly;
     }
@@ -301,11 +209,11 @@ class Keyboard extends JPanel implements MouseListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (i == 0)
-                    startNote(teacher.getNextNote());
+                    playNote(teacher.getNextNote());
                 else if (i < teacher.getMelodySize()) {
                     endNote();
                     if (firstNoteOnly) synth.playNote(teacher.getNextNote());
-                    else startNote(teacher.getNextNote());
+                    else playNote(teacher.getNextNote());
                 }
                 else {
                     endNote();
@@ -346,23 +254,48 @@ class Keyboard extends JPanel implements MouseListener {
     public void mouseEntered(MouseEvent e) { }
     public void mouseExited(MouseEvent e) { }
 
-    private final int NUM_WHITE_KEYS = 15;
-    private final double WHITE_KEY_WIDTH = 45;
-    private final double WHITE_KEY_HEIGHT = 200;
-
-    private final int NUM_BLACK_KEYS = 10;
-    private final double BLACK_KEY_HEIGHT = WHITE_KEY_HEIGHT * 0.67;
-    private final double BLACK_KEY_WIDTH = WHITE_KEY_WIDTH * 0.5;
-
-    private final int LOW_C = 48;
-
     public void setTempo(int newBpm) {
-        tempo = newBpm;
-        
+        tempo = newBpm;     
     }
     
     // returns the tempo of the auto-play, in milliseconds per note
     private int getTempo(int bpm) {
         return (int)(1/(bpm/60.0)*1000);
     }
+    
+    private class Key extends Rectangle2D.Double {
+        Color color = Color.WHITE;
+        boolean isNatural = true;
+        
+        public Key(double x, double y, double width, double height,
+                Color color, boolean isNatural) {
+            super(x, y, width, height);
+            this.color = color;
+            this.isNatural = isNatural;
+        }
+        
+        public void setColor(Color color) {
+            this.color = color;
+        }
+        
+        public Color getColor() {
+            return color;
+        }
+        
+        public void resetColor() {
+            if (isNatural) {
+                color = Color.WHITE;
+            } else {
+                color = Color.BLACK;
+            }
+        }
+    }
+    
+    private final int NUM_WHITE_KEYS = 15;
+    private final double WHITE_KEY_WIDTH = 45;
+    private final double WHITE_KEY_HEIGHT = 200;
+
+    private final int NUM_BLACK_KEYS = 10;
+    private final double BLACK_KEY_HEIGHT = WHITE_KEY_HEIGHT * 0.6;
+    private final double BLACK_KEY_WIDTH = WHITE_KEY_WIDTH * 0.5;
 }
