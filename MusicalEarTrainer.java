@@ -1,7 +1,3 @@
-/*
- * A program that helps you identify intervals on a piano.
- */
-
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
@@ -9,11 +5,12 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 @SuppressWarnings("serial")
-public class MusicalEarTrainer extends JFrame implements ActionListener, ItemListener, ChangeListener {
+public class MusicalEarTrainer extends JFrame implements ActionListener, 
+ItemListener, ChangeListener, PropertyChangeListener {
 
     JCheckBox showBox;
     JButton playButton;
-    Keyboard keyboard;
+    Piano keyboard;
     String[] keyArray = {"Low C", "C#", "D", "D#", "E", "F", "F#", 
             "G", "G#", "A", "A#", "B", "Mid C"};
     JComboBox<String> keyList = new JComboBox<String>(keyArray);    
@@ -27,9 +24,9 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         setTitle("Musical Ear Trainer");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
-        
+
         JPanel pane = new JPanel(new GridBagLayout());
-        
+
         // create group box and add components
         JPanel melodyGroup = new JPanel();
         melodyGroup.setBorder(BorderFactory.createTitledBorder("Melody Properties"));
@@ -56,7 +53,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets = new Insets(5, 5, 5, 5);
         pane.add(melodyGroup, c);
-        
+
         // add check box
         showBox = new JCheckBox("Show first note only");
         c = new GridBagConstraints();
@@ -67,7 +64,8 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         c.insets = new Insets(0, 0, 0, 10);
         showBox.setSelected(false);
         pane.add(showBox, c);
-        
+
+        // add button
         playButton = new JButton("Play New");
         playButton.setMnemonic(KeyEvent.VK_P);
         c = new GridBagConstraints();
@@ -77,8 +75,9 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         c.anchor = GridBagConstraints.LINE_END;
         c.insets = new Insets(0, 0, 0, 7);
         pane.add(playButton, c);
-        
-        keyboard = new Keyboard();
+
+        // add piano
+        keyboard = new Piano();
         c = new GridBagConstraints();
         c.gridx = 0;
         c.gridy = 2;
@@ -89,56 +88,48 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         c.anchor = GridBagConstraints.PAGE_END;
         c.insets = new Insets(7, 7, 7, 7);
         pane.add(keyboard, c);
-        
-        keyboard.addPropertyChangeListener(new PropertyChangeListener() {
 
-            @Override
-            public void propertyChange(PropertyChangeEvent e) {
-                if (e.getNewValue() == Modes.AUTOPLAY) {
-                    setEnabledAllListeners(false);
-                } else if (e.getNewValue() == Modes.RECITE) {
-                    setEnabledAllListeners(true);
-                } else if (e.getNewValue().equals(false)) {
-                    playButton.setText(PLAY_NEW);
-                } else if (e.getNewValue().equals(true)) {
-                    playButton.setText("Repeat");
-                }
-            }
-        });
+        keyboard.addPropertyChangeListener(this);
         playButton.addActionListener(this);
         keyList.addActionListener(this);
         tonalityList.addActionListener(this);
         tempoSpinner.addChangeListener(this);
         lengthSpinner.addChangeListener(this);
         showBox.addItemListener(this);
-        
+
         getContentPane().add(pane);
     }
-    
-    private void setEnabledAllListeners(boolean isEnabled) {
+
+
+    private void setEnabledControls(boolean isEnabled) {
         tonalityList.setEnabled(isEnabled);
         keyList.setEnabled(isEnabled);
-        playButton.setEnabled(isEnabled);
         showBox.setEnabled(isEnabled);
         tempoSpinner.setEnabled(isEnabled);
         lengthSpinner.setEnabled(isEnabled);
     }
 
+    // listen to controls in group box
     @Override
     public void actionPerformed (ActionEvent e) {
         if (e.getSource() == playButton) {
-            keyboard.playMelody();
-        } else {
-            if (e.getSource() == keyList) {
-                keyboard.getMusicTeacher().setKey(keyList.getSelectedIndex());
-            } else if (e.getSource() == tonalityList) {
-                keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
+            if (keyboard.getMode() == Modes.AUTOPLAY ) {
+                keyboard.stopMelody();
+            } else {
+                keyboard.playMelody();
             }
+        } else {
+            if (e.getSource() == keyList)
+                keyboard.getMusicTeacher().setKey(keyList.getSelectedIndex());
+            else if (e.getSource() == tonalityList) 
+                keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
             keyboard.setRepeatMelody(false);
             keyboard.getMusicTeacher().createMelody();
+            playButton.setText("Play New");
         }
     }
 
+    // listen to check box
     @Override
     public void itemStateChanged(ItemEvent e) {
         if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -148,7 +139,7 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         }
     }   
 
-    // Listen to the spinners
+    // listen to the spinners
     @Override
     public void stateChanged(ChangeEvent e) {
         JSpinner source = (JSpinner)e.getSource();
@@ -159,8 +150,23 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
         }
         keyboard.setRepeatMelody(false);
         keyboard.getMusicTeacher().createMelody();
+        playButton.setText("Play New");
     }
-    
+
+    // listen for property changes
+    public void propertyChange(PropertyChangeEvent e) {
+        if (e.getNewValue() == Modes.AUTOPLAY) {
+            setEnabledControls(false);
+            playButton.setText("Stop");
+        } else if (e.getNewValue() == Modes.RECITE) {
+            setEnabledControls(true);
+            playButton.setText("Repeat");
+        } else {
+            setEnabledControls(true);
+            playButton.setText("Play New");
+        }
+    }
+
     // Create and show application window
     public static void main(String[] args) {
 
@@ -170,12 +176,9 @@ public class MusicalEarTrainer extends JFrame implements ActionListener, ItemLis
             @Override
             public void run() {
                 MusicalEarTrainer window = new MusicalEarTrainer();
-
                 window.pack();
                 window.setVisible(true);
             }
         });   
     }
-    
-    private final String PLAY_NEW = "Play New";
 }
