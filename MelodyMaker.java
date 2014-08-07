@@ -1,3 +1,9 @@
+/*
+ * This class creates melodies and iterates through them.
+ * The Piano class uses this class to generate melodies,
+ * to know what melody to play, and to determine whether
+ * a user is correctly repeating a melody.
+ */
 import java.util.ArrayList;
 
 public class MelodyMaker {
