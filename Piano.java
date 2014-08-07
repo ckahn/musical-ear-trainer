@@ -1,18 +1,19 @@
+/*
+ * This class contains a virtual piano that is connected to a MIDISynth object 
+ * to generate sound. The piano plays itself when appropriate using the 
+ * melody created by the MelodyMaker object. The piano also evaluates what 
+ * the user plays back when appropriate, again using MelodyMaker. 
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import java.beans.*;
 import javax.swing.*;
 
-/**
- * This class is a JPanel with a keyboard painted on it. Each key is an 
- * independent shape object, and a mouseListener tracks which key is pressed 
- * and changes the key color accordingly.
- */
 @SuppressWarnings("serial")
 class Piano extends JPanel implements MouseListener {
-    
+
     // array of the piano keys
     Key keys[];
 
@@ -20,29 +21,29 @@ class Piano extends JPanel implements MouseListener {
     private Point position; 
 
     // unique key IDs for white and black keys, in ascending order
-    private int[] blackKeyIDs = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
-    private int[] whiteKeyIDs = {0, 2, 4, 5, 7, 9, 11, 12, 14, 
+    private int[] sharps = {1, 3, 6, 8, 10, 13, 15, 18, 20, 22};
+    private int[] naturals = {0, 2, 4, 5, 7, 9, 11, 12, 14, 
             16, 17, 19, 21, 23, 24};
 
     // MIDI synthesizer
     private MIDISynth synth;
-    
+
     // timer for auto-playing notes
     private Timer timer;
-    
+
     // whether to auto-play, evaluate user input, etc. (bound)
     private Modes mode;
     private PropertyChangeSupport rPcs = new PropertyChangeSupport(this);
-    
+
     // whether to repeat the current melody or create a new one
     private boolean repeatMelody;
-    
+
     // whether to show only the first auto-played note, otherwise show all
     private boolean firstNoteOnly;
 
     // creates melodies and compares them to user input
-    private MelodyMaker teacher = new MelodyMaker();
-    
+    private MelodyMaker melodyMaker = new MelodyMaker();
+
     // tempo of auto-played melody, in beats per minute
     private int tempo = 160;
 
@@ -51,7 +52,7 @@ class Piano extends JPanel implements MouseListener {
         position = new Point(0, 0);
         initKeyboard();
     }
-    
+
     private void initKeyboard() {
         createKeys();
         try {
@@ -66,62 +67,64 @@ class Piano extends JPanel implements MouseListener {
         setPreferredSize(new Dimension((int)(WHITE_KEY_WIDTH*NUM_WHITE_KEYS+1), 
                 (int)(WHITE_KEY_HEIGHT+1)));
     }
-    
+
     // add all keys to the array
     private void createKeys() {
         keys = new Key[NUM_WHITE_KEYS + NUM_BLACK_KEYS];
-        createWhiteKeys();
-        createBlackKeys();
+        addNaturalKeys();
+        addSharpKeys();
     }
-
-    // add all white keys to the array
-    private void createWhiteKeys() {
+    
+    // add all natural (white) keys to the array
+    private void addNaturalKeys() {
         double x = position.getX();
         double y = position.getY();
-        for (int i : whiteKeyIDs) {
+        for (int i : naturals) {
             keys[i] = new Key(x, y, WHITE_KEY_WIDTH, 
                     WHITE_KEY_HEIGHT, Color.WHITE, true);
             x = x + WHITE_KEY_WIDTH;
         }
     }
 
-    // add all black keys to the array
-    private void createBlackKeys() {
+    // add all sharp (black) keys to the array
+    private void addSharpKeys() {
         double x = position.getX() + WHITE_KEY_WIDTH - BLACK_KEY_WIDTH/2;
         double y = position.getY();
-        for (int i : blackKeyIDs) {
-            keys[i] = new Key(x, y, BLACK_KEY_WIDTH, 
+        
+        for (int i = 0; i < sharps.length; i++) {
+            keys[sharps[i]] = new Key(x, y, BLACK_KEY_WIDTH, 
                     BLACK_KEY_HEIGHT, Color.BLACK, false);
             x = x + WHITE_KEY_WIDTH;
 
-            // Skip over for adjacent white notes
-            if (i == 3 || i == 10 || i == 15) {x = x + WHITE_KEY_WIDTH; }
+            // skip over for adjacent white notes
+            if (sharps[i] == 3 || sharps[i] == 10 || sharps[i] == 15)
+                x = x + WHITE_KEY_WIDTH;
         }
     }
 
     // paint the JPanel
     @Override
     public void paintComponent(Graphics g) {
-        // Cast g to Graphics2D to access RenderingHints, drawing objects, etc.
+        // cast g to Graphics2D to access RenderingHints, drawing objects, etc.
         Graphics2D g2 = (Graphics2D) g;
 
-        // Change rendering so rectangle corners are clean
+        // change rendering so rectangle corners are clean
         RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         rh.put(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
         g2.setRenderingHints(rh);
-        
-        // Draw the white keys
-        for (int i : whiteKeyIDs) {
+
+        // draw the white keys
+        for (int i : naturals) {
             g2.setColor(keys[i].getColor());
             g2.fill(keys[i]);
             g2.setColor(Color.black);
             g2.draw(keys[i]);
         }
 
-        // Draw the black keys
-        for (int i : blackKeyIDs) {
+        // draw the black keys
+        for (int i : sharps) {
             g2.setColor(keys[i].getColor());
             g2.fill(keys[i]);
             g2.setColor(Color.black);
@@ -131,15 +134,15 @@ class Piano extends JPanel implements MouseListener {
 
     public void mousePressed(MouseEvent e) {
         Point p = new Point(e.getX(), e.getY());       
-        
-        // Check black keys first since they are on top of the white keys
-        for (int i : blackKeyIDs) {
+
+        // check black keys first since they are on top of the white keys
+        for (int i : sharps) {
             if (keys[i].contains(p)) {
                 playNote(i);
                 return;
             }
         }
-        for (int i : whiteKeyIDs) {
+        for (int i : naturals) {
             if (keys[i].contains(p)) {
                 playNote(i);
                 return;
@@ -147,27 +150,30 @@ class Piano extends JPanel implements MouseListener {
         }
     }
 
+    // play the note on the piano, color the key as appropriate
     private void playNote(int keyID) {
-        if (mode == Modes.RECITE && !teacher.isGoodNote(keyID)) {
-            keys[keyID].setColor(Color.red);
-            teacher.resetMelody();
+        if (mode == Modes.RECITE && !melodyMaker.isGoodNote(keyID)) {
+            keys[keyID].setColor(Color.RED);
+            melodyMaker.restartMelody();
         } else {
             keys[keyID].setColor(Color.LIGHT_GRAY);
         }
         synth.playNote(keyID);
+        if (mode == Modes.RECITE && melodyMaker.isLastNote())
+            keys[keyID].setColor(Color.GREEN);
         repaint();
     }
 
-    // Clear information about which key is pressed and reset keyboard
+    // clear information about which key is pressed and reset keyboard
     public void mouseReleased(MouseEvent e) {
         endNote();
-        if (mode == Modes.RECITE && teacher.isLastNote()) {
-            teacher.clearMelody();
-            teacher.resetMelody();
+        if (mode == Modes.RECITE && melodyMaker.isLastNote()) {
+            melodyMaker.clearMelody();
             setMode(Modes.IDLE);
         }
     }
 
+    // stop playing the current note
     private void endNote() {
         synth.stopNote();
         for (Key key : keys) {
@@ -176,18 +182,31 @@ class Piano extends JPanel implements MouseListener {
         repaint();
     }
 
+    /**
+     * Sets whether the first note only will be shown during an automatically 
+     * played melody, or whether all notes will be shown.
+     * @param firstOnly whether only the first note will be shown
+     */
     public void setFirstNoteOnly(boolean firstOnly) {
         firstNoteOnly = firstOnly;
     }
-    
-    public MelodyMaker getMusicTeacher() {
-        return teacher;
+
+    /**
+     * Gets this object's MelodyMaker.
+     * @return this object's MelodyMaker
+     */
+    public MelodyMaker getMelodyMaker() {
+        return melodyMaker;
     }
 
-    // Automatically play a melody for the user to repeat
+    /**
+     * Initiates the process for automatically playing a melody. This method 
+     * changes this object's state to Modes.AUTOPLAY while the melody is 
+     * playing, and the state changes to Modes.RECITE once it is complete.
+     */
     public void playMelody() {
         if (!repeatMelody) 
-            teacher.createMelody();
+            melodyMaker.createMelody();
         setMode(Modes.AUTOPLAY);
         timer = new Timer(getTempo(tempo), new ActionListener() {
             private int i = 0;
@@ -195,11 +214,11 @@ class Piano extends JPanel implements MouseListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (i == 0)
-                    playNote(teacher.getNextNote());
-                else if (i < teacher.getMelodySize()) {
+                    playNote(melodyMaker.getNextNote());
+                else if (i < melodyMaker.getMelodySize()) {
                     endNote();
-                    if (firstNoteOnly) synth.playNote(teacher.getNextNote());
-                    else playNote(teacher.getNextNote());
+                    if (firstNoteOnly) synth.playNote(melodyMaker.getNextNote());
+                    else playNote(melodyMaker.getNextNote());
                 }
                 else {
                     endNote();
@@ -212,19 +231,23 @@ class Piano extends JPanel implements MouseListener {
         timer.setInitialDelay(100);
         timer.start();
     }
-    
+
+    /**
+     * Stops the process for automatically playing a melody.
+     */
     public void stopMelody() {
         endNote();
         timer.stop();
         setMode(Modes.RECITE);
     }
 
+    // set the mode for this object; let any registered listeners know
     private void setMode(Modes newMode) {
         Modes oldMode = mode;
         mode = newMode;
         rPcs.firePropertyChange("mode", oldMode, mode);
         if (mode == Modes.RECITE) {
-            teacher.resetMelody();
+            melodyMaker.restartMelody();
             addMouseListener(this);
         } else if (mode == Modes.AUTOPLAY){
             removeMouseListener(this);
@@ -233,21 +256,30 @@ class Piano extends JPanel implements MouseListener {
             setRepeatMelody(false);
         }
     }
-    
+
+    /**
+     * Gets the current mode of this object (AUTOPLAY, etc.)
+     * @return the current mode of this object
+     */
     public Modes getMode() {
         return mode;
     }
-    
+
+    /**
+     * Sets whether the current melody should be repeated, or a new melody 
+     * should be created.
+     * @param repeat whether the current melody should be repeated
+     */
     public void setRepeatMelody(boolean repeat) {
-        teacher.resetMelody();
+        melodyMaker.restartMelody();
         repeatMelody = repeat;
     }
 
-    
+
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         rPcs.addPropertyChangeListener(listener);
     }
-    
+
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         rPcs.removePropertyChangeListener(listener);
     }
@@ -260,31 +292,32 @@ class Piano extends JPanel implements MouseListener {
     public void setTempo(int newBpm) {
         tempo = newBpm;     
     }
-    
+
     // returns the tempo of the auto-play, in milliseconds per note
     private int getTempo(int bpm) {
         return (int)(1/(bpm/60.0)*1000);
     }
-    
+
+    // each instance of this class represents a key in the piano
     private class Key extends Rectangle2D.Double {
         Color color = Color.WHITE;
         boolean isNatural = true;
-        
+
         public Key(double x, double y, double width, double height,
                 Color color, boolean isNatural) {
             super(x, y, width, height);
             this.color = color;
             this.isNatural = isNatural;
         }
-        
+
         public void setColor(Color color) {
             this.color = color;
         }
-        
+
         public Color getColor() {
             return color;
         }
-        
+
         public void resetColor() {
             if (isNatural) {
                 color = Color.WHITE;
@@ -293,7 +326,7 @@ class Piano extends JPanel implements MouseListener {
             }
         }
     }
-    
+
     private final int NUM_WHITE_KEYS = 15;
     private final double WHITE_KEY_WIDTH = 45;
     private final double WHITE_KEY_HEIGHT = 175;

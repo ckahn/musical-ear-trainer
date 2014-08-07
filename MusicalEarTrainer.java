@@ -1,3 +1,12 @@
+/*
+ * This is the main class. It creates the program window,  adds all the 
+ * required Swing components, registers the needed listeners, etc. A Piano
+ * object is created and added to the window, and messages are sent to the 
+ * Piano as appropriate. This class also listens for changes in the Piano's
+ * state (e.g., to disable most of the components when a melody is being 
+ * automatically played.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
@@ -10,7 +19,7 @@ ItemListener, ChangeListener, PropertyChangeListener {
 
     JCheckBox showBox;
     JButton playButton;
-    Piano keyboard;
+    Piano piano;
     String[] keyArray = {"Low C", "C#", "D", "D#", "E", "F", "F#", 
             "G", "G#", "A", "A#", "B", "Mid C"};
     JComboBox<String> keyList = new JComboBox<String>(keyArray);    
@@ -77,7 +86,7 @@ ItemListener, ChangeListener, PropertyChangeListener {
         pane.add(playButton, c);
 
         // add piano
-        keyboard = new Piano();
+        piano = new Piano();
         c = new GridBagConstraints();
         c.gridx = 0;
         c.gridy = 2;
@@ -87,9 +96,10 @@ ItemListener, ChangeListener, PropertyChangeListener {
         c.fill = GridBagConstraints.HORIZONTAL;
         c.anchor = GridBagConstraints.PAGE_END;
         c.insets = new Insets(7, 7, 7, 7);
-        pane.add(keyboard, c);
+        pane.add(piano, c);
 
-        keyboard.addPropertyChangeListener(this);
+        // add interactions
+        piano.addPropertyChangeListener(this);
         playButton.addActionListener(this);
         keyList.addActionListener(this);
         tonalityList.addActionListener(this);
@@ -100,7 +110,7 @@ ItemListener, ChangeListener, PropertyChangeListener {
         getContentPane().add(pane);
     }
 
-
+    // enable/disable all controls except for the button
     private void setEnabledControls(boolean isEnabled) {
         tonalityList.setEnabled(isEnabled);
         keyList.setEnabled(isEnabled);
@@ -109,33 +119,33 @@ ItemListener, ChangeListener, PropertyChangeListener {
         lengthSpinner.setEnabled(isEnabled);
     }
 
-    // listen to controls in group box
+    // listen to the button and drop-down lists
     @Override
     public void actionPerformed (ActionEvent e) {
         if (e.getSource() == playButton) {
-            if (keyboard.getMode() == Modes.AUTOPLAY ) {
-                keyboard.stopMelody();
+            if (piano.getMode() == Modes.AUTOPLAY ) {
+                piano.stopMelody();
             } else {
-                keyboard.playMelody();
+                piano.playMelody();
             }
         } else {
             if (e.getSource() == keyList)
-                keyboard.getMusicTeacher().setKey(keyList.getSelectedIndex());
+                piano.getMelodyMaker().setKey(keyList.getSelectedIndex());
             else if (e.getSource() == tonalityList) 
-                keyboard.getMusicTeacher().setTonality(tonalityList.getSelectedIndex());
-            keyboard.setRepeatMelody(false);
-            keyboard.getMusicTeacher().createMelody();
+                piano.getMelodyMaker().setTonality(tonalityList.getSelectedIndex());
+            piano.setRepeatMelody(false);
+            piano.getMelodyMaker().createMelody();
             playButton.setText("Play New");
         }
     }
 
-    // listen to check box
+    // listen to the check box
     @Override
     public void itemStateChanged(ItemEvent e) {
         if (e.getStateChange() == ItemEvent.SELECTED) {
-            keyboard.setFirstNoteOnly(true);
+            piano.setFirstNoteOnly(true);
         } else {
-            keyboard.setFirstNoteOnly(false);
+            piano.setFirstNoteOnly(false);
         }
     }   
 
@@ -144,16 +154,16 @@ ItemListener, ChangeListener, PropertyChangeListener {
     public void stateChanged(ChangeEvent e) {
         JSpinner source = (JSpinner)e.getSource();
         if (source == lengthSpinner) {
-            keyboard.getMusicTeacher().setMelodyLength((int)source.getValue());
+            piano.getMelodyMaker().setLength((int)source.getValue());
         } else if (source == tempoSpinner) {
-            keyboard.setTempo((int)source.getValue());
+            piano.setTempo((int)source.getValue());
         }
-        keyboard.setRepeatMelody(false);
-        keyboard.getMusicTeacher().createMelody();
+        piano.setRepeatMelody(false);
+        piano.getMelodyMaker().createMelody();
         playButton.setText("Play New");
     }
 
-    // listen for property changes
+    // listen for property changes in the Piano object
     public void propertyChange(PropertyChangeEvent e) {
         if (e.getNewValue() == Modes.AUTOPLAY) {
             setEnabledControls(false);

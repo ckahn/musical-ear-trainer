@@ -5,13 +5,23 @@ public class MelodyMaker {
     private ArrayList<Integer> melody = new ArrayList<Integer>();
     private int[] scalePattern;
     private int i = 0;
-    private int melodyLength = 3;
-    private int firstNote = 0;
-    
+    private int melodyLength;
+    private int firstNote;
+
+    // set initial values
+    // these must match the initial control settings in the window!
     public MelodyMaker() {
         setTonality(MAJOR);
+        setLength(3);
+        setKey(0);
     }
 
+    /**
+     * Returns true if the pressed key matches the expected key for the 
+     * automatically played melody and moves melody forward.
+     * @param keyID the index of the pressed key (0 = first key)
+     * @return whether the pressed key matches the expected key
+     */
     public boolean isGoodNote(int keyID) {
         if (i < melody.size() && keyID == getNextNote()) {
             return true;
@@ -21,14 +31,26 @@ public class MelodyMaker {
         }
     }
 
+    /**
+     * Returns the number of notes in the current melody.
+     * @return the number of notes in the current melody
+     */
     public int getMelodySize() {
         return melody.size();
     }
 
+    /**
+     * Returns the next note in the current melody and moves the melody forward.
+     * @return the next note in the current melody and moves the melody forward
+     */
     public int getNextNote() {
         return melody.get(i++);
     }
 
+    /**
+     * Sets the tonality of the melody's scale.
+     * @param tonality the tonality of the melody
+     */
     public void setTonality(int tonality) {
         int[] majorScale = {0, 2, 4, 5, 7, 9, 11, 12};
         int[] minorScale = {0, 2, 3, 5, 7, 8, 10, 12};
@@ -45,14 +67,25 @@ public class MelodyMaker {
         }
     }
 
+    /**
+     * Sets the key (e.g., C) for the melody's scale.
+     * @param key the key of the melody
+     */
     public void setKey(int key) {
         firstNote = key;
     }
 
-    public void setMelodyLength(int len) {
+    /**
+     * Sets the length of the melody (i.e., number of notes).
+     * @param len the length of the melody
+     */
+    public void setLength(int len) {
         melodyLength = len;
     }
 
+    /**
+     * Creates the melody that the piano will automatically play.
+     */
     public void createMelody() {
         clearMelody();
         melody.add(firstNote);
@@ -67,17 +100,28 @@ public class MelodyMaker {
         }
     }
 
-    public void resetMelody() {
+    /**
+     * Set the melody to its first note.
+     */
+    public void restartMelody() {
         i = 0;
     }
 
+    /**
+     * Returns true if the melody is on its last note.
+     * @return true if the melody is on its late note
+     */
     public boolean isLastNote() {
         if (i == melody.size()) {
             return true;
         } else return false;
     }
 
+    /**
+     * Delete the melody.
+     */
     public void clearMelody() {
+        restartMelody();
         melody.clear();
     }
 
