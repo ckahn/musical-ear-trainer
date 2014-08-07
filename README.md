@@ -1,7 +1,7 @@
 musical-ear-trainer
 ===================
 
-A tool to help you practice playing novel melodies by ear.
+A tool to help you practice playing novel melodies by ear on a piano-like virtual instrument.
 
 ## How the program works
 
