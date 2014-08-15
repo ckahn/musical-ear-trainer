@@ -1,6 +1,8 @@
 musical-ear-trainer
 ===================
 
+![](https://dl.dropboxusercontent.com/u/848790/piano.png)
+
 A tool to help you practice playing novel melodies by ear on a piano-like virtual instrument.
 
 ## How the program works
