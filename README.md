@@ -17,4 +17,4 @@ The Piano class has instances of **MelodyMaker** and **MIDISynth**. The former g
 
 ## Compiling/building/running
 
-This program is intended to be run as a standalone JAR file with the Version 7 of the JVM.
+This program is intended to be run as a standalone executable JAR file with the JVM 7.
