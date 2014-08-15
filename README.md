@@ -5,7 +5,7 @@ A tool to help you practice playing novel melodies by ear on a piano-like virtua
 
 ## How the program works
 
-This program contains a virtual piano. You select the properties for a melody (e.g., key, length, tempo), and the piano can automatically play a randomly-generated melody with those properties. Your job is then to play the melody back. If you fail, you can have the program replay the melody. Once you succeed -- or if you change any of the melody properties -- the program can play a new melody.
+This program contains a virtual piano. You select the properties for a melody (e.g., key, length, tempo), and the piano can automatically play a randomly-generated melody with those properties. Your job is then to play the melody back. If you fail, the incorrect key you press will turn red, and you can have the program replay the melody. Once you succeed -- or if you change any of the melody properties -- the program can play a new melody. When you press the last (correct) key of a melody, the key will turn green.
 
 ## Code design
 
