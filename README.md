@@ -19,4 +19,4 @@ The Piano class has instances of **MelodyMaker** and **MIDISynth**. The former g
 
 ## Compiling/building/running
 
-This program is intended to be run as a standalone executable JAR file using the [Java Runtime Environment](https://java.com/en/download/), version 7 or higher. The JAR file is available [here](https://dl.dropboxusercontent.com/u/848790/MusicalEarTrainer.jar). If you use Windows or a popular Linux distribution, installing Java and double-clicking the JAR file should suffice. If you're on a Mac, you might be required to install the full Java Development Kit. In that case, don't bother :)
+This program is intended to be run as a standalone executable JAR file using the [Java Runtime Environment](https://java.com/en/download/), version 7 or higher. The JAR file is available [here](https://dl.dropboxusercontent.com/u/848790/MusicalEarTrainer.jar). If you use Windows or a popular Linux distribution, installing Java and double-clicking the JAR file should suffice. If you're on a Mac, you might be required to install the full Java Development Kit (which requires registering with Oracle, etc.).
