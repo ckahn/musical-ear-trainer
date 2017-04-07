@@ -1,7 +1,7 @@
 musical-ear-trainer
 ===================
 
-![](https://dl.dropboxusercontent.com/u/848790/piano.png)
+![](https://www.dropbox.com/s/ui49osnqpui7c5p/piano.png?dl=1)
 
 A tool to help you practice playing novel melodies by ear on a piano-like virtual instrument.
 
@@ -19,4 +19,4 @@ The Piano class has instances of **MelodyMaker** and **MIDISynth**. The former g
 
 ## Compiling/building/running
 
-This program is intended to be run as a standalone executable JAR file using the [Java Runtime Environment](https://java.com/en/download/) (JRE), version 7 or higher. The JAR file is available [here](https://dl.dropboxusercontent.com/u/848790/MusicalEarTrainer.jar). If you use Windows or a popular Linux distribution, installing the JRE and double-clicking the JAR file should suffice. If you're on a Mac, you might be required to install the full Java Development Kit (which requires registering with Oracle, etc.).
+This program is intended to be run as a standalone executable JAR file using the [Java Runtime Environment](https://java.com/en/download/) (JRE), version 7 or higher. The JAR file is available [here](https://www.dropbox.com/s/1uviq1wivqdhtw6/MusicalEarTrainer.jar?dl=1). If you use Windows or a popular Linux distribution, installing the JRE and double-clicking the JAR file should suffice. If you're on a Mac, you might be required to install the full Java Development Kit (which requires registering with Oracle, etc.).
